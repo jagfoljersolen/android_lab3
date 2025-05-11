@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Lab3</string>
+    <string name="label_address">Adres:</string>
+    <string name="address">https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86/alpine-minirootfs-3.21.3-x86.tar.gz</string>
+    <string name="info">POBIERZ INFORMACJĘ</string>
+    <string name="label_size">Rozmiar pliku:</string>
+    <string name="label_type">Typ pliku:</string>
+    <string name="file">POBIERZ PLIK</string>
+    <string name="label_bytes">Pobrano bajtów:</string>
+    <string name="init">0</string>
+
+    <string name="notification_title">"Pobieranie pliku"</string>
+</resources>
