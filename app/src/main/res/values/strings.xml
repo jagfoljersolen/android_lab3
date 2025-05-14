@@ -10,4 +10,8 @@
     <string name="init">0</string>
 
     <string name="notification_title">"Pobieranie pliku"</string>
+
+    <string name="downloading">Pobieranie trwa</string>
+    <string name="finished">Pobieranie zakończone</string>
+    <string name="error">Błąd</string>
 </resources>

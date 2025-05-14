@@ -9,9 +9,9 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import android.app.PendingIntent
-import android.nfc.tech.MifareClassic.BLOCK_SIZE
 import android.os.Environment
 import androidx.core.app.NotificationCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -25,6 +25,8 @@ class IntentTaskService : IntentService("IntentTaskService") {
         private const val PARAMETER1 = "com.example.lab3.extra.parameter1"
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "download_channel"
+
+        const val NOTIFICATION = "com.example.Lab3.MainActivity"
 
         @JvmStatic
         fun startService(context: Context, parameter: String) {
@@ -106,19 +108,26 @@ class IntentTaskService : IntentService("IntentTaskService") {
             }
             fileStream = FileOutputStream(outputFile)
 
-            val buffer = ByteArray(BLOCK_SIZE)
+            val buffer = ByteArray(1024)
             var downloaded: Int
             var downloadedBytes = 0L
             var totalSize = connection.contentLength
 
             mNotificationManager?.notify(NOTIFICATION_ID, createNotification())
 
+            var lastProgress = -1
+
             while (inputStream.read(buffer).also { downloaded = it } != -1) {
                 fileStream.write(buffer, 0, downloaded)
                 downloadedBytes += downloaded
                 val progress = (downloadedBytes * 100 / totalSize).toInt()
-                Log.d("DownloadProgress", "Postęp pobierania: $progress%")
-
+                if (progress != lastProgress) {
+                    Log.d("DownloadProgress", "Postęp pobierania: $progress%")
+                    val notification = createNotification(progress)
+                    mNotificationManager?.notify(NOTIFICATION_ID, notification)
+                    sendBroadcast(progress, downloadedBytes)
+                    lastProgress = progress
+                }
             }
             fileStream.flush()
 
@@ -136,5 +145,12 @@ class IntentTaskService : IntentService("IntentTaskService") {
                 e.printStackTrace()
             }
         }
+    }
+
+    private fun sendBroadcast(value1 : Int, value2 : Long) {
+        val intent = Intent(NOTIFICATION)
+        intent.putExtra("progress", value1)
+        intent.putExtra("downloadedBytes", value2)
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
     }
 }

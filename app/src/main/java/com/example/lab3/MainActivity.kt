@@ -12,7 +12,13 @@ import androidx.core.app.ActivityCompat
 import java.net.HttpURLConnection
 import java.net.URL
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,6 +27,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var typeView: TextView
     private lateinit var infoButton : Button
     private lateinit var downloadButton : Button
+    private lateinit var progressView : TextView
+    private lateinit var progressBar : ProgressBar
+
+    private val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent == null) return
+            val progress = intent.getIntExtra("progress", 0)
+            val downloadedBytes = intent.getLongExtra("downloadedBytes", 0L)
+            progressBar.progress = progress
+            progressView.text = downloadedBytes.toString()
+        }
+    }
 
     companion object {
         private const val REQUEST_WRITE_STORAGE = 101
@@ -35,6 +53,8 @@ class MainActivity : AppCompatActivity() {
         typeView = findViewById(R.id.type)
         infoButton = findViewById(R.id.info_button)
         downloadButton = findViewById(R.id.file_button)
+        progressView = findViewById(R.id.bytes)
+        progressBar = findViewById(R.id.progressBar)
 
 
         infoButton.setOnClickListener {
@@ -48,17 +68,17 @@ class MainActivity : AppCompatActivity() {
                 IntentTaskService.startService(this, address.text.toString())
 
             } else {
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-
-                    ActivityCompat.requestPermissions(
+                ActivityCompat.requestPermissions(
                         this,
                         arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
                         REQUEST_WRITE_STORAGE)
-                }
+
             }
 
         }
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(receiver, IntentFilter(
+            IntentTaskService.NOTIFICATION))
 
 
     }
@@ -114,14 +134,32 @@ class MainActivity : AppCompatActivity() {
             return Pair(size,type)
         }
 
-        override fun onProgressUpdate(vararg values: Int?) {
-            // aktualizacja informacji o postępie
-        }
-
         override fun onPostExecute(result: Pair<String,String>) {
             sizeView.text = result.first
             typeView.text = result.second
         }
     }
 
+    override fun onDestroy() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver)
+        super.onDestroy()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("address", address.text.toString())
+        outState.putString("size", sizeView.text.toString())
+        outState.putString("type", typeView.text.toString())
+        outState.putString("progress", progressView.text.toString())
+        outState.putInt("progressBar", progressBar.progress)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        address.setText(savedInstanceState.getString("address", ""))
+        sizeView.text = savedInstanceState.getString("size", "?")
+        typeView.text = savedInstanceState.getString("type", "?")
+        progressView.text = savedInstanceState.getString("progress", "0")
+        progressBar.progress = savedInstanceState.getInt("progressBar", 0)
+    }
 }
